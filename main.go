@@ -51,7 +51,5 @@ func realMain() error {
 	// set http handlers
 	mux := router.NewRouter(todoDB)
 
-	// TODO: ここから実装を行う
-
-	return http.ListenAndServe(defaultPort, mux)
+	return http.ListenAndServe(port, mux)
 }
