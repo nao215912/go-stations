@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -52,5 +53,5 @@ func realMain() error {
 
 	// TODO: ここから実装を行う
 
-	return nil
+	return http.ListenAndServe(defaultPort, mux)
 }
