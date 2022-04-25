@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/TechBowl-japan/go-stations/model"
 	"github.com/TechBowl-japan/go-stations/service"
+	"math"
 	"net/http"
 	"strconv"
 )
@@ -60,17 +61,15 @@ func (h *TODOHandler) handlePost(w http.ResponseWriter, r *http.Request) {
 func (h *TODOHandler) handleGet(w http.ResponseWriter, r *http.Request) {
 	var (
 		req model.ReadTODORequest
-		err error
 	)
 	m := r.URL.Query()
-	if req.PrevID, err = strconv.ParseInt(m.Get("prev_id"), 10, 64); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	req.PrevID, _ = strconv.ParseInt(m.Get("prev_id"), 10, 64)
+	req.Size, _ = strconv.ParseInt(m.Get("size"), 10, 64)
+
+	if req.PrevID == 0 && req.Size == 0 {
+		req.Size = math.MaxInt64
 	}
-	if req.Size, err = strconv.ParseInt(m.Get("size"), 10, 64); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+
 	res, err := h.Read(r.Context(), &req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -89,13 +88,13 @@ func (h *TODOHandler) handlePut(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if req.Subject == "" || req.Description == "" {
+	if req.Subject == "" || req.ID == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	res, err := h.Update(r.Context(), &req)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -107,13 +106,13 @@ func (h *TODOHandler) handlePut(w http.ResponseWriter, r *http.Request) {
 
 func (h *TODOHandler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	var req model.DeleteTODORequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || len(req.IDs) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	res, err := h.Delete(r.Context(), &req)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
